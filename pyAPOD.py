@@ -66,6 +66,10 @@ class APOD(Gtk.Window):
         #-------------------------------
         apod_data = self.get_apod_data(7)
 
+        # get cache directory to store images
+        #-------------------------------------
+        cache_dir = self.get_cache_dir()
+
         # create a list store: icon, title, date, picture
         #-------------------------------------------------
         self.liststore = Gtk.ListStore(GdkPixbuf.Pixbuf, str, str, str, str)
@@ -76,7 +80,7 @@ class APOD(Gtk.Window):
             tit = item[3]
             inf = item[4]
             ico_name = ico.split('/')[-1]
-            tmp_name = os.path.join('/tmp', ico_name)
+            tmp_name = os.path.join(cache_dir, ico_name)
             # see if icon is already downloaded
             if os.path.isfile(tmp_name):
                 print "found icon: ", tmp_name
@@ -133,7 +137,8 @@ class APOD(Gtk.Window):
                                            is_secondary=True)
 
         self.button_open = Gtk.Button(stock=Gtk.STOCK_OPEN)
-        self.button_open.connect('clicked', self.on_button_open_clicked)
+        self.button_open.connect('clicked', self.on_button_open_clicked,
+                                 cache_dir)
         self.buttonbox.add(self.button_open)
 
         self.grid.attach(self.buttonbox, 0, 1, 1, 1)
@@ -186,9 +191,21 @@ class APOD(Gtk.Window):
 
         return [apod_dat, apod_img, apod_ico, apod_tit, apod_inf]
 
+    # function to get cache directory
+    #---------------------------------
+    def get_cache_dir(self):
+        """Create cache directory if it doesn't exist"""
+        home = os.environ.get('HOME')
+        cache = os.path.join('.cache', 'pyAPOD')
+        if os.path.isdir(os.path.join(home, cache)):
+            return os.path.join(home, cache)
+        else:
+            os.makedirs(os.path.join(home, cache))
+            return os.path.join(home, cache)
+
     # callback for button Open
     #--------------------------
-    def on_button_open_clicked(self, widget):
+    def on_button_open_clicked(self, widget, cache_dir):
         """Download and show selected picture"""
         selection = self.treeview.get_selection()
         model, treeiter = selection.get_selected()
@@ -196,7 +213,7 @@ class APOD(Gtk.Window):
         if treeiter is not None:
             tit, dat, img, inf = model[treeiter][1:]
             img_name = img.split('/')[-1]
-            tmp_name = os.path.join('/tmp', img_name)
+            tmp_name = os.path.join(cache_dir, img_name)
 
             # see if image is already downloaded
             if os.path.isfile(tmp_name):
