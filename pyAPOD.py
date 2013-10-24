@@ -30,6 +30,7 @@ __version__ = "0.1"
 import os
 import urllib2
 import datetime
+import ConfigParser
 
 from BeautifulSoup import BeautifulSoup
 from gi.repository import Gtk, GdkPixbuf
@@ -47,6 +48,28 @@ class APOD(Gtk.Window):
         self.set_default_size(400, 450)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(10)
+
+        # read or create a config file
+        #------------------------------
+        home_path = os.environ.get('HOME')
+        self.conf_path = os.path.join(home_path, '.pyAPOD.cfg')
+
+        self.conf_file = ConfigParser.SafeConfigParser()
+        self.conf_file.read(self.conf_path)
+
+        if os.path.isfile(self.conf_path):
+            # read config file
+            days_numb = self.conf_file.get('number_of_days', 'days')
+            icon_size = self.conf_file.get('size_of_icons', 'size')
+        else:
+            # write a default config file
+            days_numb_default = '7'
+            icon_size_default = '50'
+            self.conf_file.add_section('number_of_days')
+            self.conf_file.set('number_of_days', 'days', days_numb_default)
+            self.conf_file.add_section('size_of_icons')
+            self.conf_file.set('size_of_icons', 'size', icon_size_default)
+            self.conf_file.write(open(self.conf_path, 'w'))
 
         # create a grid
         #---------------
@@ -452,7 +475,7 @@ class PrefsAPOD(Gtk.Dialog):
         self.grid.attach(self.label_days, 0, 0, 1, 1)
 
         # adjustment
-        adjust_days = Gtk.Adjustment(7, 0, 100, 1, 10, 0)
+        adjust_days = Gtk.Adjustment(7, 1, 100, 1, 10, 0)
 
         # spin button
         self.spin_days = Gtk.SpinButton()
@@ -460,13 +483,17 @@ class PrefsAPOD(Gtk.Dialog):
         self.grid.attach(self.spin_days, 1, 0, 1, 1)
 
         # label
-        self.label_start = Gtk.Label('Select starting date:')
-        self.label_start.set_alignment(0, 0)
-        self.grid.attach(self.label_start, 0, 1, 1, 1)
+        self.label_size = Gtk.Label('Select icon size (pixels):')
+        self.label_size.set_alignment(0, 0)
+        self.grid.attach(self.label_size, 0, 1, 1, 1)
 
-        # button
-        self.button_start = Gtk.Button('From:')
-        self.grid.attach(self.button_start, 1, 1, 1, 1)
+        # adjustment
+        adjust_size = Gtk.Adjustment(20, 20, 100, 5, 10, 0)
+
+        # spin button
+        self.spin_size = Gtk.SpinButton()
+        self.spin_size.set_adjustment(adjust_size)
+        self.grid.attach(self.spin_size, 1, 1, 1, 1)
 
         box = self.get_content_area()
         box.add(self.grid)
