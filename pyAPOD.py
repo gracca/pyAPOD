@@ -59,16 +59,15 @@ class APOD(Gtk.Window):
 
         if os.path.isfile(self.conf_path):
             # read config file
-            days_numb = self.conf_file.get('number_of_days', 'days')
-            icon_size = self.conf_file.get('size_of_icons', 'size')
+            days_numb = self.conf_file.get('pyapod_settings', 'days')
+            icon_size = self.conf_file.get('pyapod_settings', 'size')
         else:
             # write a default config file
-            days_numb_default = '7'
-            icon_size_default = '50'
-            self.conf_file.add_section('number_of_days')
-            self.conf_file.set('number_of_days', 'days', days_numb_default)
-            self.conf_file.add_section('size_of_icons')
-            self.conf_file.set('size_of_icons', 'size', icon_size_default)
+            days_numb = '7'
+            icon_size = '50'
+            self.conf_file.add_section('pyapod_settings')
+            self.conf_file.set('pyapod_settings', 'days', days_numb)
+            self.conf_file.set('pyapod_settings', 'size', icon_size)
             self.conf_file.write(open(self.conf_path, 'w'))
 
         # create a grid
@@ -271,10 +270,17 @@ class APOD(Gtk.Window):
     # callback for button Prefs
     #---------------------------
     def on_button_prefs_clicked(self, widget):
-        """Show preferences dialog"""
+        """Show preferences dialog and update config file"""
         dialog = PrefsAPOD(self)
         response = dialog.run()
-#        if response == Gtk.ResponseType.OK:
+        if response == Gtk.ResponseType.OK:
+            # get new values
+            days_numb_new = dialog.spin_days.get_value_as_int()
+            icon_size_new = dialog.spin_size.get_value_as_int()
+            # update config file
+            self.conf_file.set('pyapod_settings', 'days', str(days_numb_new))
+            self.conf_file.set('pyapod_settings', 'size', str(icon_size_new))
+            self.conf_file.write(open(self.conf_path, 'w'))
         dialog.destroy()
 
     # callback for button About
