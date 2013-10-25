@@ -49,27 +49,6 @@ class APOD(Gtk.Window):
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(10)
 
-        # read or create a config file
-        #------------------------------
-        home_path = os.environ.get('HOME')
-        self.conf_path = os.path.join(home_path, '.pyAPOD.cfg')
-
-        self.conf_file = ConfigParser.SafeConfigParser()
-        self.conf_file.read(self.conf_path)
-
-        if os.path.isfile(self.conf_path):
-            # read config file
-            days_numb = self.conf_file.get('pyapod_settings', 'days')
-            icon_size = self.conf_file.get('pyapod_settings', 'size')
-        else:
-            # write a default config file
-            days_numb = '7'
-            icon_size = '50'
-            self.conf_file.add_section('pyapod_settings')
-            self.conf_file.set('pyapod_settings', 'days', days_numb)
-            self.conf_file.set('pyapod_settings', 'size', icon_size)
-            self.conf_file.write(open(self.conf_path, 'w'))
-
         # create a grid
         #---------------
         self.grid = Gtk.Grid(column_homogeneous=True,
@@ -84,13 +63,17 @@ class APOD(Gtk.Window):
                                        Gtk.PolicyType.AUTOMATIC)
         self.grid.add(self.scrolledwindow)
 
-        # get apod data for last 7 days
-        #-------------------------------
-        apod_data = self.get_apod_data(7)
+        # read settings from config file
+        #--------------------------------
+        days_numb, icon_size = self.get_settings()
 
         # get cache directory to store images
         #-------------------------------------
         cache_dir = self.get_cache_dir()
+
+        # get apod data for last 'days_numb' days
+        #-----------------------------------------
+        apod_data = self.get_apod_data(days_numb)
 
         # create a list store: icon, title, date, picture
         #-------------------------------------------------
@@ -105,14 +88,14 @@ class APOD(Gtk.Window):
             tmp_name = os.path.join(cache_dir, ico_name)
             # see if icon is already downloaded
             if os.path.isfile(tmp_name):
-                print "found icon: ", tmp_name
+                print "\033[1;32m[ found icon ]\033[0m", tmp_name
                 pass
             else:
                 icon = urllib2.urlopen(ico).read()
                 open(tmp_name, 'wb').write(icon)
             pxbf = GdkPixbuf.Pixbuf.new_from_file_at_scale(tmp_name,
-                                                           50,
-                                                           50,
+                                                           icon_size,
+                                                           icon_size,
                                                            True)
             self.liststore.append([pxbf, tit, dat, img, inf])
 
@@ -165,8 +148,32 @@ class APOD(Gtk.Window):
 
         self.grid.attach(self.buttonbox, 0, 1, 1, 1)
 
-    # function to fetch APOD data
-    #-----------------------------
+    # function to manage settings file
+    #----------------------------------
+    def get_settings(self):
+        """Read or create a config file"""
+        home = os.environ.get('HOME')
+        self.conf_path = os.path.join(home, '.pyAPOD.cfg')
+
+        self.conf_file = ConfigParser.SafeConfigParser()
+        self.conf_file.read(self.conf_path)
+
+        if os.path.isfile(self.conf_path):
+            # read config file
+            days_numb = self.conf_file.get('pyapod_settings', 'days')
+            icon_size = self.conf_file.get('pyapod_settings', 'size')
+        else:
+            # write a default config file
+            days_numb = '7'
+            icon_size = '50'
+            self.conf_file.add_section('pyapod_settings')
+            self.conf_file.set('pyapod_settings', 'days', days_numb)
+            self.conf_file.set('pyapod_settings', 'size', icon_size)
+            self.conf_file.write(open(self.conf_path, 'w'))
+        return int(days_numb), int(icon_size)
+
+    # functions to fetch APOD data
+    #------------------------------
     def get_apod_data(self, num):
         """List of APOD data for a number of dates"""
         date = datetime.date.today()
@@ -239,7 +246,7 @@ class APOD(Gtk.Window):
 
             # see if image is already downloaded
             if os.path.isfile(tmp_name):
-                print "found image: ", tmp_name
+                print "\033[1;32m[ found image ]\033[0m", tmp_name
                 picture = ViewAPOD(tit, dat, img_name, tmp_name, inf)
             else:
                 try:  # if not, download it
