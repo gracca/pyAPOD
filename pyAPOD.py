@@ -65,7 +65,9 @@ class APOD(Gtk.Window):
 
         # read settings from config file
         #--------------------------------
-        days_numb, icon_size = self.get_settings()
+        apod_settings = SettingsAPOD()
+        days_numb, icon_size = apod_settings.get_settings()
+        print days_numb, icon_size
 
         # get cache directory to store images
         #-------------------------------------
@@ -147,30 +149,6 @@ class APOD(Gtk.Window):
         self.buttonbox.add(self.button_open)
 
         self.grid.attach(self.buttonbox, 0, 1, 1, 1)
-
-    # function to manage settings file
-    #----------------------------------
-    def get_settings(self):
-        """Read or create a config file"""
-        home = os.environ.get('HOME')
-        self.conf_path = os.path.join(home, '.pyAPOD.cfg')
-
-        self.conf_file = ConfigParser.SafeConfigParser()
-        self.conf_file.read(self.conf_path)
-
-        if os.path.isfile(self.conf_path):
-            # read config file
-            days_numb = self.conf_file.get('pyapod_settings', 'days')
-            icon_size = self.conf_file.get('pyapod_settings', 'size')
-        else:
-            # write a default config file
-            days_numb = '7'
-            icon_size = '50'
-            self.conf_file.add_section('pyapod_settings')
-            self.conf_file.set('pyapod_settings', 'days', days_numb)
-            self.conf_file.set('pyapod_settings', 'size', icon_size)
-            self.conf_file.write(open(self.conf_path, 'w'))
-        return int(days_numb), int(icon_size)
 
     # functions to fetch APOD data
     #------------------------------
@@ -285,9 +263,8 @@ class APOD(Gtk.Window):
             days_numb_new = dialog.spin_days.get_value_as_int()
             icon_size_new = dialog.spin_size.get_value_as_int()
             # update config file
-            self.conf_file.set('pyapod_settings', 'days', str(days_numb_new))
-            self.conf_file.set('pyapod_settings', 'size', str(icon_size_new))
-            self.conf_file.write(open(self.conf_path, 'w'))
+            apod_settings = SettingsAPOD()
+            apod_settings.write_settings(days_numb_new, icon_size_new)
         dialog.destroy()
 
     # callback for button About
@@ -325,6 +302,42 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
     def on_about_closed(self, widget, parameter):
         """Destroy about dialog"""
         widget.destroy()
+
+
+#############
+## C L A S S
+###########################
+class SettingsAPOD:
+    """Manage settings file"""
+
+    def __init__(self):
+        home = os.environ.get('HOME')
+        self.conf_path = os.path.join(home, '.pyAPOD.cfg')
+        self.conf_file = ConfigParser.SafeConfigParser()
+        self.conf_file.read(self.conf_path)
+
+    def get_settings(self):
+        """Read or create the config file"""
+        if os.path.isfile(self.conf_path):
+            # read config file
+            days_numb = self.conf_file.get('pyapod_settings', 'days')
+            icon_size = self.conf_file.get('pyapod_settings', 'size')
+        else:
+            # write a default config file
+            days_numb = '7'
+            icon_size = '50'
+            self.conf_file.add_section('pyapod_settings')
+            self.conf_file.set('pyapod_settings', 'days', days_numb)
+            self.conf_file.set('pyapod_settings', 'size', icon_size)
+            self.conf_file.write(open(self.conf_path, 'w'))
+        return int(days_numb), int(icon_size)
+
+    def write_settings(self, days_numb_new, icon_size_new):
+        """Write data to config file"""
+        self.conf_file.set('pyapod_settings', 'days', str(days_numb_new))
+        self.conf_file.set('pyapod_settings', 'size', str(icon_size_new))
+        self.conf_file.write(open(self.conf_path, 'w'))
+        return
 
 
 #############
@@ -479,6 +492,10 @@ class PrefsAPOD(Gtk.Dialog):
                              Gtk.STOCK_OK, Gtk.ResponseType.OK))
         self.set_modal(True)
 
+        # get settings
+        apod_settings = SettingsAPOD()
+        days, size = apod_settings.get_settings()
+
         # grid
         self.grid = Gtk.Grid(column_spacing=5, row_spacing=5)
 
@@ -488,11 +505,12 @@ class PrefsAPOD(Gtk.Dialog):
         self.grid.attach(self.label_days, 0, 0, 1, 1)
 
         # adjustment
-        adjust_days = Gtk.Adjustment(7, 1, 100, 1, 10, 0)
+        adjust_days = Gtk.Adjustment(1, 1, 100, 1, 10, 0)
 
         # spin button
         self.spin_days = Gtk.SpinButton()
         self.spin_days.set_adjustment(adjust_days)
+        self.spin_days.set_value(days)
         self.grid.attach(self.spin_days, 1, 0, 1, 1)
 
         # label
@@ -506,6 +524,7 @@ class PrefsAPOD(Gtk.Dialog):
         # spin button
         self.spin_size = Gtk.SpinButton()
         self.spin_size.set_adjustment(adjust_size)
+        self.spin_size.set_value(size)
         self.grid.attach(self.spin_size, 1, 1, 1, 1)
 
         box = self.get_content_area()
