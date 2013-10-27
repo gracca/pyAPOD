@@ -25,6 +25,9 @@ __copyright__ = "Copyright (C) 2013, Germán A. Racca"
 __email__ = "gracca@gmail.com"
 __license__ = "GPLv3+"
 __version__ = "0.1"
+GREEN = '\033[0;32m'
+BLUE = '\033[0;34m'
+RESET = '\033[0m'
 
 
 import os
@@ -67,6 +70,10 @@ class APOD(Gtk.Window):
         #--------------------------------
         apod_settings = SettingsAPOD()
         days_numb, icon_size = apod_settings.get_settings()
+        print "[ " + BLUE + "settings" + RESET + " ]" + \
+              " icon size =", icon_size
+        print "[ " + BLUE + "settings" + RESET + " ]" + \
+              " number of days =", days_numb
 
         # get cache directory to store images
         #-------------------------------------
@@ -89,7 +96,7 @@ class APOD(Gtk.Window):
             tmp_name = os.path.join(cache_dir, ico_name)
             # see if icon is already downloaded
             if os.path.isfile(tmp_name):
-                print "\033[1;32m[ found icon ]\033[0m", tmp_name
+                print "[ " + GREEN + "found icon" + RESET + " ]", tmp_name
                 pass
             else:
                 icon = urllib2.urlopen(ico).read()
@@ -223,7 +230,7 @@ class APOD(Gtk.Window):
 
             # see if image is already downloaded
             if os.path.isfile(tmp_name):
-                print "\033[1;32m[ found image ]\033[0m", tmp_name
+                print "[ " + GREEN + "found image" + RESET + " ]", tmp_name
                 picture = ViewAPOD(tit, dat, img_name, tmp_name, inf)
             else:
                 try:  # if not, download it
@@ -261,6 +268,10 @@ class APOD(Gtk.Window):
             # get new values
             days_numb_new = dialog.spin_days.get_value_as_int()
             icon_size_new = dialog.spin_size.get_value_as_int()
+            print "[ " + BLUE + "settings" + RESET + " ]" + \
+                  " icon size =", icon_size_new
+            print "[ " + BLUE + "settings" + RESET + " ]" + \
+                  " number of days =", days_numb_new
             # update config file
             apod_settings = SettingsAPOD()
             apod_settings.write_settings(days_numb_new, icon_size_new)
@@ -278,7 +289,7 @@ class APOD(Gtk.Window):
                 tmp_name = os.path.join(cache_dir, ico_name)
                 # see if icon is already downloaded
                 if os.path.isfile(tmp_name):
-                    print "\033[1;32m[ found icon ]\033[0m", tmp_name
+                    print "[ " + GREEN + "found icon" + RESET + " ]", tmp_name
                     pass
                 else:
                     icon = urllib2.urlopen(ico).read()
