@@ -67,7 +67,6 @@ class APOD(Gtk.Window):
         #--------------------------------
         apod_settings = SettingsAPOD()
         days_numb, icon_size = apod_settings.get_settings()
-        print days_numb, icon_size
 
         # get cache directory to store images
         #-------------------------------------
@@ -265,6 +264,31 @@ class APOD(Gtk.Window):
             # update config file
             apod_settings = SettingsAPOD()
             apod_settings.write_settings(days_numb_new, icon_size_new)
+            # update liststore and reload treeview
+            cache_dir = self.get_cache_dir()  # get cache dir again
+            apod_data = self.get_apod_data(days_numb_new)  # get new data
+            self.liststore = Gtk.ListStore(GdkPixbuf.Pixbuf, str, str, str, str)
+            for item in apod_data:
+                dat = item[0]
+                img = item[1]
+                ico = item[2]
+                tit = item[3]
+                inf = item[4]
+                ico_name = ico.split('/')[-1]
+                tmp_name = os.path.join(cache_dir, ico_name)
+                # see if icon is already downloaded
+                if os.path.isfile(tmp_name):
+                    print "\033[1;32m[ found icon ]\033[0m", tmp_name
+                    pass
+                else:
+                    icon = urllib2.urlopen(ico).read()
+                    open(tmp_name, 'wb').write(icon)
+                pxbf = GdkPixbuf.Pixbuf.new_from_file_at_scale(tmp_name,
+                                                               icon_size_new,
+                                                               icon_size_new,
+                                                               True)
+                self.liststore.append([pxbf, tit, dat, img, inf])
+            self.treeview.set_model(model=self.liststore)
         dialog.destroy()
 
     # callback for button About
@@ -311,6 +335,7 @@ class SettingsAPOD:
     """Manage settings file"""
 
     def __init__(self):
+        """Initialize config file"""
         home = os.environ.get('HOME')
         self.conf_path = os.path.join(home, '.pyAPOD.cfg')
         self.conf_file = ConfigParser.SafeConfigParser()
