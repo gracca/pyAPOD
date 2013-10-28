@@ -85,27 +85,7 @@ class APOD(Gtk.Window):
 
         # create a list store: icon, title, date, picture
         #-------------------------------------------------
-        self.liststore = Gtk.ListStore(GdkPixbuf.Pixbuf, str, str, str, str)
-        for item in apod_data:
-            dat = item[0]
-            img = item[1]
-            ico = item[2]
-            tit = item[3]
-            inf = item[4]
-            ico_name = ico.split('/')[-1]
-            tmp_name = os.path.join(cache_dir, ico_name)
-            # see if icon is already downloaded
-            if os.path.isfile(tmp_name):
-                print "[ " + GREEN + "found icon" + RESET + " ]", tmp_name
-                pass
-            else:
-                icon = urllib2.urlopen(ico).read()
-                open(tmp_name, 'wb').write(icon)
-            pxbf = GdkPixbuf.Pixbuf.new_from_file_at_scale(tmp_name,
-                                                           icon_size,
-                                                           icon_size,
-                                                           True)
-            self.liststore.append([pxbf, tit, dat, img, inf])
+        self.get_liststore(apod_data, cache_dir, icon_size)
 
         # create the tree view
         #----------------------
@@ -216,6 +196,32 @@ class APOD(Gtk.Window):
             os.makedirs(os.path.join(home, cache))
             return os.path.join(home, cache)
 
+    # function to create a liststore
+    #--------------------------------
+    def get_liststore(self, apod_data, cache_dir, icon_size):
+        """Create the liststore: icon, title, date, picture"""
+        self.liststore = Gtk.ListStore(GdkPixbuf.Pixbuf, str, str, str, str)
+        for item in apod_data:
+            dat = item[0]
+            img = item[1]
+            ico = item[2]
+            tit = item[3]
+            inf = item[4]
+            ico_name = ico.split('/')[-1]
+            tmp_name = os.path.join(cache_dir, ico_name)
+            # see if icon is already downloaded
+            if os.path.isfile(tmp_name):
+                print "[ " + GREEN + "found icon" + RESET + " ]", tmp_name
+                pass
+            else:
+                icon = urllib2.urlopen(ico).read()
+                open(tmp_name, 'wb').write(icon)
+            pxbf = GdkPixbuf.Pixbuf.new_from_file_at_scale(tmp_name,
+                                                           icon_size,
+                                                           icon_size,
+                                                           True)
+            self.liststore.append([pxbf, tit, dat, img, inf])
+
     # callback for button Open
     #--------------------------
     def on_button_open_clicked(self, widget, cache_dir):
@@ -278,27 +284,7 @@ class APOD(Gtk.Window):
             # update liststore and reload treeview
             cache_dir = self.get_cache_dir()  # get cache dir again
             apod_data = self.get_apod_data(days_numb_new)  # get new data
-            self.liststore = Gtk.ListStore(GdkPixbuf.Pixbuf, str, str, str, str)
-            for item in apod_data:
-                dat = item[0]
-                img = item[1]
-                ico = item[2]
-                tit = item[3]
-                inf = item[4]
-                ico_name = ico.split('/')[-1]
-                tmp_name = os.path.join(cache_dir, ico_name)
-                # see if icon is already downloaded
-                if os.path.isfile(tmp_name):
-                    print "[ " + GREEN + "found icon" + RESET + " ]", tmp_name
-                    pass
-                else:
-                    icon = urllib2.urlopen(ico).read()
-                    open(tmp_name, 'wb').write(icon)
-                pxbf = GdkPixbuf.Pixbuf.new_from_file_at_scale(tmp_name,
-                                                               icon_size_new,
-                                                               icon_size_new,
-                                                               True)
-                self.liststore.append([pxbf, tit, dat, img, inf])
+            self.get_liststore(apod_data, cache_dir, icon_size_new)
             self.treeview.set_model(model=self.liststore)
         dialog.destroy()
 
